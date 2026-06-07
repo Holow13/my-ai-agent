@@ -1,0 +1,9 @@
+build/
+.cache/
+*.o
+*.a
+*.so
+*.dylib
+/jarvis
+data/index/
+.env
