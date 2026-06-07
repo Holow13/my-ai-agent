@@ -99,10 +99,16 @@ ollama list
 # Перейти в папку проекта (подставьте свой путь)
 Set-Location "D:\projects\my-ai-agent"
 
-# Сборка через MSVC (рекомендуется на Windows 11)
-cmake -S . -B build
+# Вариант A — скрипт (рекомендуется)
+.\build.ps1
+
+# Вариант B — вручную (явно указываем генератор VS, не nmake)
+Remove-Item -Recurse -Force build -ErrorAction SilentlyContinue
+cmake -G "Visual Studio 17 2022" -A x64 -S . -B build
 cmake --build build --config Release
 ```
+
+> **Важно:** не запускайте просто `cmake -S . -B build` без `-G` — на Windows это часто ломается с ошибкой `nmake`.
 
 Готовый файл:
 
@@ -255,6 +261,29 @@ Set-Location "D:\projects\my-ai-agent"
 .\build\Release\jarvis.exe status
 ```
 
+### `nmake` / `no such file or directory` при cmake
+
+CMake выбрал не тот генератор. Исправление:
+
+```powershell
+Set-Location "D:\projects\my-ai-agent"
+Remove-Item -Recurse -Force build -ErrorAction SilentlyContinue
+cmake -G "Visual Studio 17 2022" -A x64 -S . -B build
+cmake --build build --config Release
+```
+
+Если ошибка остаётся — установите Build Tools:
+
+```powershell
+winget install --id Microsoft.VisualStudio.2022.BuildTools -e
+```
+
+В **Visual Studio Installer** включите: **Desktop development with C++**, перезагрузите ПК, затем:
+
+```powershell
+.\build.ps1
+```
+
 ### `cmake` не найден
 
 Перезапустите PowerShell. Если не помогло — добавьте CMake в PATH вручную:
@@ -323,8 +352,7 @@ ollama pull llama3.2
 ollama pull nomic-embed-text
 
 # Сборка и запуск
-cmake -S . -B build
-cmake --build build --config Release
+.\build.ps1
 .\build\Release\jarvis.exe index
 .\build\Release\jarvis.exe
 ```
