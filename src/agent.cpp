@@ -21,16 +21,18 @@ bool contains_any(const std::string& text, const std::initializer_list<const cha
 }
 
 std::string expand_rag_query(const std::string& user_message) {
-  if (contains_any(user_message, {"кто я", "обо мне", "кто такой", "что ты знаешь", "мои проект",
+  if (contains_any(user_message, {"кто я", "обо мне", "кто такой", "а я кто", "я кто",
+                                    "что ты знаешь", "мои проект", "бро", "братан",
                                     "who am i", "about me"})) {
-    return user_message + " about_me обо мне пользователь preferences projects";
+    return user_message + " about_me обо мне пользователь имя город учеба projects";
   }
   return user_message;
 }
 
 bool should_use_tools(const std::string& user_message) {
-  if (contains_any(user_message, {"кто я", "обо мне", "кто такой", "что ты знаешь", "мои проект",
-                                  "что ты умеешь", "who am i", "about me"})) {
+  if (contains_any(user_message, {"кто я", "обо мне", "кто такой", "а я кто", "я кто",
+                                  "что ты знаешь", "мои проект", "что ты умеешь",
+                                  "бро", "братан", "who am i", "about me"})) {
     return false;
   }
 
@@ -52,7 +54,8 @@ Answer questions about the user, their identity, projects, and preferences using
 Do not invent files, folders, or facts that are not in the knowledge base or tool results.
 Use tools only when the user explicitly asks for time, filesystem access, or shell inspection.
 Prefer short, actionable answers in Russian unless the user writes in another language.
-If the knowledge base contains the answer, respond directly and do not call tools.)";
+If the knowledge base contains the answer, respond directly and do not call tools.
+Words like "бро" or "братан" are informal greetings, not questions about siblings.)";
 }
 
 nlohmann::json Agent::build_messages(const std::string& user_message) const {
