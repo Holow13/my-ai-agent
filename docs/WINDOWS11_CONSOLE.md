@@ -184,6 +184,59 @@ Set-Location "D:\projects\my-ai-agent"
 
 ## 10. Если что-то не работает
 
+### `ollama` не распознано (CommandNotFoundException)
+
+PowerShell не видит Ollama. Сделайте по шагам:
+
+**Шаг 1 — проверить, установлена ли Ollama:**
+
+```powershell
+Get-Command ollama -ErrorAction SilentlyContinue
+Test-Path "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe"
+```
+
+**Шаг 2 — если `False`, установить:**
+
+```powershell
+winget install --id Ollama.Ollama -e
+```
+
+Или скачайте установщик: https://ollama.com/download/windows
+
+**Шаг 3 — закрыть PowerShell полностью и открыть новое окно.**
+
+**Шаг 4 — если всё ещё не работает, запускать по полному пути:**
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" --version
+& "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" pull llama3.2
+& "$env:LOCALAPPDATA\Programs\Ollama\ollama.exe" pull nomic-embed-text
+```
+
+**Шаг 5 — добавить Ollama в PATH (один раз):**
+
+```powershell
+$ollamaDir = "$env:LOCALAPPDATA\Programs\Ollama"
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    [Environment]::GetEnvironmentVariable("Path", "User") + ";$ollamaDir",
+    "User"
+)
+```
+
+Закройте и снова откройте PowerShell, затем:
+
+```powershell
+ollama --version
+```
+
+**Шаг 6 — убедиться, что Ollama запущена:**
+
+- В трее (возле часов) должна быть иконка llama, или
+- Запустите из меню Пуск → **Ollama**
+
+---
+
 ### `Ollama: offline`
 
 ```powershell
