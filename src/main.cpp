@@ -2,6 +2,7 @@
 #include "jarvis/config.hpp"
 #include "jarvis/ollama.hpp"
 #include "jarvis/rag.hpp"
+#include "jarvis/encoding.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -34,6 +35,7 @@ std::string join_args(int argc, char** argv, int start_index) {
 
 int main(int argc, char** argv) {
   try {
+    jarvis::setup_console_encoding();
     const std::string config_path = "config.json";
     const jarvis::Config config = jarvis::load_config(config_path);
     jarvis::OllamaClient ollama(config.ollama_host);
@@ -80,7 +82,7 @@ int main(int argc, char** argv) {
         print_usage();
         return 1;
       }
-      const std::string answer = agent.ask(join_args(argc, argv, 2));
+      const std::string answer = agent.ask(jarvis::ensure_utf8(join_args(argc, argv, 2)));
       std::cout << answer << '\n';
       return 0;
     }
@@ -101,7 +103,7 @@ int main(int argc, char** argv) {
         }
 
         try {
-          const std::string answer = agent.ask(line);
+          const std::string answer = agent.ask(jarvis::ensure_utf8(line));
           std::cout << "JARVIS> " << answer << '\n';
         } catch (const std::exception& ex) {
           std::cerr << "Error: " << ex.what() << '\n';

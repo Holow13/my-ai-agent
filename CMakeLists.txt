@@ -27,6 +27,7 @@ add_executable(jarvis
   src/tools.cpp
   src/agent.cpp
   src/utils.cpp
+  src/encoding.cpp
 )
 
 target_include_directories(jarvis PRIVATE include)
