@@ -1,8 +1,9 @@
 #include "jarvis/agent.hpp"
 #include "jarvis/config.hpp"
+#include "jarvis/database.hpp"
+#include "jarvis/encoding.hpp"
 #include "jarvis/ollama.hpp"
 #include "jarvis/rag.hpp"
-#include "jarvis/encoding.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -17,7 +18,9 @@ void print_usage() {
             << "  jarvis                 Interactive chat\n"
             << "  jarvis index           Build RAG index from data/documents\n"
             << "  jarvis ask <message>   Single question\n"
-            << "  jarvis status          Check Ollama and index status\n";
+            << "  jarvis status          Check Ollama and index status\n"
+            << "  jarvis history         Show recent chat messages\n"
+            << "  jarvis facts           Show user profile facts\n";
 }
 
 std::string join_args(int argc, char** argv, int start_index) {
@@ -38,18 +41,45 @@ int main(int argc, char** argv) {
     jarvis::setup_console_encoding();
     const std::string config_path = "config.json";
     const jarvis::Config config = jarvis::load_config(config_path);
+
+    jarvis::Database database(config.db_path);
+    database.open();
+    database.migrate();
+    database.seed_defaults();
+
     jarvis::OllamaClient ollama(config.ollama_host);
-    jarvis::RagStore rag(config, ollama);
-    jarvis::Agent agent(config, ollama, rag);
+    jarvis::RagStore rag(config, ollama, database);
+    jarvis::Agent agent(config, ollama, rag, database);
 
     const std::string command = argc > 1 ? argv[1] : "chat";
 
     if (command == "status") {
       std::cout << "Ollama: " << (ollama.is_available() ? "online" : "offline") << '\n';
+      std::cout << "Database: " << config.db_path << " (" << database.chunk_count() << " chunks)\n";
       if (rag.load_index()) {
         std::cout << "RAG index: loaded (" << rag.chunk_count() << " chunks)\n";
       } else {
         std::cout << "RAG index: missing (run `jarvis index`)\n";
+      }
+      return 0;
+    }
+
+    if (command == "history") {
+      const auto records = database.recent_chats(10);
+      if (records.empty()) {
+        std::cout << "No chat history yet.\n";
+        return 0;
+      }
+      for (const auto& record : records) {
+        std::cout << "[" << record.created_at << "] " << record.role << "> " << record.content << "\n\n";
+      }
+      return 0;
+    }
+
+    if (command == "facts") {
+      const auto keys = {"name", "city", "university", "direction", "course"};
+      for (const char* key : keys) {
+        std::cout << key << ": " << database.get_fact(key) << '\n';
       }
       return 0;
     }
@@ -61,6 +91,7 @@ int main(int argc, char** argv) {
       }
       rag.build_index();
       std::cout << "Index built: " << rag.chunk_count() << " chunks\n";
+      std::cout << "Saved to: " << config.db_path << '\n';
       return 0;
     }
 

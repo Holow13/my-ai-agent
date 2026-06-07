@@ -1,13 +1,10 @@
 #include "jarvis/rag.hpp"
 
-#include "jarvis/utils.hpp"
 #include "jarvis/encoding.hpp"
-
-#include <nlohmann/json.hpp>
+#include "jarvis/utils.hpp"
 
 #include <algorithm>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 
@@ -24,11 +21,16 @@ bool is_text_document(const fs::path& path) {
 
 }  // namespace
 
-RagStore::RagStore(const Config& config, OllamaClient& ollama)
-    : config_(config), ollama_(ollama) {}
+RagStore::RagStore(const Config& config, OllamaClient& ollama, Database& database)
+    : config_(config), ollama_(ollama), database_(database) {}
+
+void RagStore::reload_chunks() { chunks_ = database_.load_chunks(); }
+
+std::size_t RagStore::chunk_count() const { return chunks_.size(); }
 
 void RagStore::build_index() {
   chunks_.clear();
+  database_.clear_index();
 
   if (!fs::exists(config_.documents_dir)) {
     fs::create_directories(config_.documents_dir);
@@ -44,52 +46,33 @@ void RagStore::build_index() {
     const std::string source = entry.path().string();
     const std::string text = read_text_file(source);
     const auto parts = split_chunks(text, config_.chunk_size, config_.chunk_overlap);
+    const std::int64_t document_id =
+        database_.upsert_document(source, entry.path().filename().string());
 
     std::cout << "Indexing " << source << " (" << parts.size() << " chunks)\n";
-    for (const auto& part : parts) {
-      RagChunk chunk;
-      chunk.source = source;
-      chunk.text = part;
-      chunk.embedding = ollama_.embed(config_.embed_model, part);
-      chunks_.push_back(std::move(chunk));
+    for (std::size_t i = 0; i < parts.size(); ++i) {
+      const std::int64_t chunk_id =
+          database_.insert_chunk(document_id, static_cast<int>(i), parts[i]);
+      const auto embedding = ollama_.embed(config_.embed_model, parts[i]);
+      database_.insert_embedding(chunk_id, embedding);
     }
   }
 
-  save_index();
+  reload_chunks();
 }
 
 bool RagStore::load_index() {
-  const fs::path index_path = fs::path(config_.index_dir) / "chunks.json";
-  if (!fs::exists(index_path)) {
-    return false;
-  }
-
-  const auto json = nlohmann::json::parse(read_file(index_path.string()));
-  chunks_.clear();
-  for (const auto& item : json.at("chunks")) {
-    RagChunk chunk;
-    chunk.source = item.at("source").get<std::string>();
-    chunk.text = item.at("text").get<std::string>();
-    for (const auto& value : item.at("embedding")) {
-      chunk.embedding.push_back(value.get<float>());
+  const fs::path legacy_index = fs::path(config_.index_dir) / "chunks.json";
+  if (database_.chunk_count() == 0 && fs::exists(legacy_index)) {
+    std::cout << "Migrating legacy JSON index to SQLite...\n";
+    if (database_.import_legacy_json(legacy_index.string())) {
+      reload_chunks();
+      return !chunks_.empty();
     }
-    chunks_.push_back(std::move(chunk));
-  }
-  return true;
-}
-
-void RagStore::save_index() const {
-  fs::create_directories(config_.index_dir);
-
-  nlohmann::json json;
-  json["chunks"] = nlohmann::json::array();
-  for (const auto& chunk : chunks_) {
-    nlohmann::json item = {{"source", chunk.source}, {"text", chunk.text}, {"embedding", chunk.embedding}};
-    json["chunks"].push_back(std::move(item));
   }
 
-  const fs::path index_path = fs::path(config_.index_dir) / "chunks.json";
-  write_file(index_path.string(), json.dump());
+  reload_chunks();
+  return !chunks_.empty();
 }
 
 std::vector<RagHit> RagStore::search(const std::string& query) const {

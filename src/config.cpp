@@ -31,6 +31,9 @@ Config load_config(const std::string& path) {
   if (json.contains("index_dir")) {
     config.index_dir = json["index_dir"].get<std::string>();
   }
+  if (json.contains("db_path")) {
+    config.db_path = json["db_path"].get<std::string>();
+  }
   if (json.contains("rag_top_k")) {
     config.rag_top_k = json["rag_top_k"].get<std::size_t>();
   }

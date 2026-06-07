@@ -8,6 +8,15 @@
 
 ## Требования
 
+
+## Документация
+
+- [План обучения](docs/LEARNING_PLAN.md) — что учить и как работает JARVIS
+- [План по неделям](docs/WEEKLY_PLAN.md) — задачи и результаты
+- [Схема SQLite](docs/db_schema.md)
+- [Шпаргалка](docs/MY_JARVIS.md)
+- [Windows 11](docs/WINDOWS11_CONSOLE.md)
+
 ## Windows 11
 
 Пошаговое ТЗ для консоли (PowerShell): [docs/WINDOWS11_CONSOLE.md](docs/WINDOWS11_CONSOLE.md)

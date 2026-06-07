@@ -11,6 +11,7 @@ struct Config {
   std::string embed_model = "nomic-embed-text";
   std::string documents_dir = "data/documents";
   std::string index_dir = "data/index";
+  std::string db_path = "data/jarvis.db";
   std::size_t rag_top_k = 4;
   std::size_t chunk_size = 600;
   std::size_t chunk_overlap = 100;

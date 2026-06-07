@@ -1,6 +1,7 @@
 #pragma once
 
 #include "jarvis/config.hpp"
+#include "jarvis/database.hpp"
 #include "jarvis/ollama.hpp"
 #include "jarvis/rag.hpp"
 
@@ -12,7 +13,7 @@ namespace jarvis {
 
 class Agent {
  public:
-  Agent(const Config& config, OllamaClient& ollama, RagStore& rag);
+  Agent(const Config& config, OllamaClient& ollama, RagStore& rag, Database& database);
 
   std::string ask(const std::string& user_message);
   void reset();
@@ -22,6 +23,7 @@ class Agent {
   const Config& config_;
   OllamaClient& ollama_;
   RagStore& rag_;
+  Database& database_;
   std::vector<nlohmann::json> history_;
   static constexpr int kMaxToolRounds = 8;
 

@@ -7,3 +7,4 @@ build/
 /jarvis
 data/index/
 .env
+data/jarvis.db

@@ -4,6 +4,7 @@
   "embed_model": "nomic-embed-text",
   "documents_dir": "data/documents",
   "index_dir": "data/index",
+  "db_path": "data/jarvis.db",
   "rag_top_k": 4,
   "chunk_size": 600,
   "chunk_overlap": 100

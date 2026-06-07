@@ -1,6 +1,7 @@
 #include "jarvis/agent.hpp"
 
 #include "jarvis/tools.hpp"
+#include "jarvis/database.hpp"
 #include "jarvis/utils.hpp"
 
 #include <sstream>
@@ -43,8 +44,8 @@ bool should_use_tools(const std::string& user_message) {
 
 }  // namespace
 
-Agent::Agent(const Config& config, OllamaClient& ollama, RagStore& rag)
-    : config_(config), ollama_(ollama), rag_(rag) {}
+Agent::Agent(const Config& config, OllamaClient& ollama, RagStore& rag, Database& database)
+    : config_(config), ollama_(ollama), rag_(rag), database_(database) {}
 
 void Agent::reset() { history_.clear(); }
 
@@ -113,6 +114,8 @@ std::string Agent::ask(const std::string& user_message) {
 
     history_.push_back({{"role", "user"}, {"content", user_message}});
     history_.push_back({{"role", "assistant"}, {"content", content}});
+    database_.save_chat("user", user_message);
+    database_.save_chat("assistant", content);
     return content;
   }
 
