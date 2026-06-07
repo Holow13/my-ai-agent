@@ -8,6 +8,10 @@
 
 ## Требования
 
+## Windows 11
+
+Пошаговое ТЗ для консоли (PowerShell): [docs/WINDOWS11_CONSOLE.md](docs/WINDOWS11_CONSOLE.md)
+
 - CMake 3.16+
 - C++17 компилятор (GCC, Clang)
 - [Ollama](https://ollama.com/)
