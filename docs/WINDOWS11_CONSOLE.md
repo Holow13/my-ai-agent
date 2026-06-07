@@ -95,6 +95,18 @@ ollama list
 
 ## 5. Сборка проекта
 
+Если PowerShell пишет `выполнение сценариев отключено`, сначала выполните:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+Или запускайте скрипт без смены политики:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build.ps1
+```
+
 ```powershell
 # Перейти в папку проекта (подставьте свой путь)
 Set-Location "D:\projects\my-ai-agent"
