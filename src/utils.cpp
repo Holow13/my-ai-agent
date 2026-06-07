@@ -1,4 +1,5 @@
 #include "jarvis/utils.hpp"
+#include "jarvis/encoding.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -48,8 +49,16 @@ std::vector<std::string> split_chunks(const std::string& text, std::size_t chunk
 
   const std::size_t step = chunk_size > overlap ? chunk_size - overlap : chunk_size;
   for (std::size_t start = 0; start < text.size(); start += step) {
+    while (start < text.size() &&
+           (static_cast<unsigned char>(text[start]) & 0xC0) == 0x80) {
+      ++start;
+    }
+    if (start >= text.size()) {
+      break;
+    }
     const std::size_t end = std::min(start + chunk_size, text.size());
-    const std::string piece = trim(text.substr(start, end - start));
+    std::string piece = trim(text.substr(start, end - start));
+    piece = fix_utf8_boundaries(piece);
     if (!piece.empty()) {
       chunks.push_back(piece);
     }

@@ -42,7 +42,7 @@ void RagStore::build_index() {
     }
 
     const std::string source = entry.path().string();
-    const std::string text = ensure_utf8(read_file(source));
+    const std::string text = read_text_file(source);
     const auto parts = split_chunks(text, config_.chunk_size, config_.chunk_overlap);
 
     std::cout << "Indexing " << source << " (" << parts.size() << " chunks)\n";
