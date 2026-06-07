@@ -1,11 +1,45 @@
 #include "jarvis/agent.hpp"
 
 #include "jarvis/tools.hpp"
+#include "jarvis/utils.hpp"
 
 #include <sstream>
 #include <stdexcept>
 
 namespace jarvis {
+
+namespace {
+
+bool contains_any(const std::string& text, const std::initializer_list<const char*> phrases) {
+  const std::string lower = to_lower(text);
+  for (const char* phrase : phrases) {
+    if (lower.find(phrase) != std::string::npos) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::string expand_rag_query(const std::string& user_message) {
+  if (contains_any(user_message, {"кто я", "обо мне", "кто такой", "что ты знаешь", "мои проект",
+                                    "who am i", "about me"})) {
+    return user_message + " about_me обо мне пользователь preferences projects";
+  }
+  return user_message;
+}
+
+bool should_use_tools(const std::string& user_message) {
+  if (contains_any(user_message, {"кто я", "обо мне", "кто такой", "что ты знаешь", "мои проект",
+                                  "что ты умеешь", "who am i", "about me"})) {
+    return false;
+  }
+
+  return contains_any(user_message,
+                    {"время", "дата", "файл", "прочитай", "открой", "папк", "директор", "каталог",
+                     "list", "ls", "dir", "команда", "shell", "status", "статус системы"});
+}
+
+}  // namespace
 
 Agent::Agent(const Config& config, OllamaClient& ollama, RagStore& rag)
     : config_(config), ollama_(ollama), rag_(rag) {}
@@ -14,33 +48,34 @@ void Agent::reset() { history_.clear(); }
 
 std::string Agent::system_prompt() {
   return R"(You are JARVIS, a concise personal AI assistant.
-Use the provided knowledge base context when it is relevant.
-Use tools when you need current time, filesystem access, or shell inspection.
+Answer questions about the user, their identity, projects, and preferences using ONLY the knowledge base context in this system message.
+Do not invent files, folders, or facts that are not in the knowledge base or tool results.
+Use tools only when the user explicitly asks for time, filesystem access, or shell inspection.
 Prefer short, actionable answers in Russian unless the user writes in another language.
-If a tool fails, explain the issue briefly and continue with best-effort reasoning.)";
+If the knowledge base contains the answer, respond directly and do not call tools.)";
 }
 
 nlohmann::json Agent::build_messages(const std::string& user_message) const {
-  std::ostringstream enriched;
-  enriched << user_message;
+  std::ostringstream system;
+  system << system_prompt();
 
-  const std::string rag_context = rag_.build_context(user_message);
+  const std::string rag_context = rag_.build_context(expand_rag_query(user_message));
   if (!rag_context.empty()) {
-    enriched << "\n\n" << rag_context;
+    system << "\n\n" << rag_context;
   }
 
   nlohmann::json messages = nlohmann::json::array();
-  messages.push_back({{"role", "system"}, {"content", system_prompt()}});
+  messages.push_back({{"role", "system"}, {"content", system.str()}});
   for (const auto& message : history_) {
     messages.push_back(message);
   }
-  messages.push_back({{"role", "user"}, {"content", enriched.str()}});
+  messages.push_back({{"role", "user"}, {"content", user_message}});
   return messages;
 }
 
 std::string Agent::ask(const std::string& user_message) {
   nlohmann::json messages = build_messages(user_message);
-  const auto tools = tool_definitions();
+  const auto tools = should_use_tools(user_message) ? tool_definitions() : nlohmann::json::array();
 
   for (int round = 0; round < kMaxToolRounds; ++round) {
     const auto response = ollama_.chat(config_.chat_model, messages, tools);
