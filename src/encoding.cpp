@@ -95,7 +95,8 @@ std::string ensure_utf8(const std::string& text) {
   }
 
 #ifdef _WIN32
-  for (const unsigned int code_page : {1251u, 866u, CP_ACP}) {
+  const unsigned int code_pages[] = {1251u, 866u, static_cast<unsigned int>(CP_ACP)};
+  for (unsigned int code_page : code_pages) {
     const std::string converted = windows_code_page_to_utf8(text, code_page);
     if (!converted.empty() && is_valid_utf8(converted)) {
       return converted;
