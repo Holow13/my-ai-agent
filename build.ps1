@@ -15,7 +15,7 @@ function Remove-BuildCache {
 
 function Test-Generator {
     param([string]$Name)
-    $output = & cmake -G $Name --help 2>&1
+    & cmake -G $Name --help 2>&1 | Out-Null
     return $LASTEXITCODE -eq 0
 }
 
@@ -43,16 +43,16 @@ foreach ($generator in $generators) {
 
 if (-not $configured) {
     Write-Error @"
-CMake could not find a C++ toolchain.
+CMake could not find Visual Studio with C++.
 
-Install Visual Studio 2022 Build Tools:
-  winget install --id Microsoft.VisualStudio.2022.BuildTools -e
+STEP 1 — install Build Tools (PowerShell as Administrator):
+  winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 
-Then in Visual Studio Installer enable:
-  Desktop development with C++
+STEP 2 — if C++ workload is still missing, open "Visual Studio Installer":
+  Start -> Visual Studio Installer -> Modify -> check "Desktop development with C++" -> Install
 
-After install, reopen PowerShell and run:
-  .\build.ps1
+STEP 3 — reboot PC, reopen PowerShell, then run:
+  powershell -ExecutionPolicy Bypass -File .\build.ps1
 "@
 }
 

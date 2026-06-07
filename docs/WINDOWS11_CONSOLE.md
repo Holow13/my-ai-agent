@@ -31,15 +31,19 @@ winget install --id Kitware.CMake -e
 # Ollama
 winget install --id Ollama.Ollama -e
 
-# Компилятор C++ (Visual Studio Build Tools)
-winget install --id Microsoft.VisualStudio.2022.BuildTools -e
+# Компилятор C++ (Visual Studio Build Tools) — PowerShell от администратора
+winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-После установки Build Tools откройте **Visual Studio Installer** и добавьте компонент:
+Если команда выше не поставила C++, откройте вручную:
 
-> **Desktop development with C++** (Разработка классических приложений на C++)
+1. Пуск → **Visual Studio Installer**
+2. У **Build Tools 2022** нажмите **Изменить** (Modify)
+3. Поставьте галочку **Разработка классических приложений на C++**
+4. Справа убедитесь, что выбраны **MSVC** и **Windows SDK**
+5. Нажмите **Установить**
 
-Перезапустите PowerShell, чтобы подхватились PATH.
+После установки **перезагрузите ПК**, затем откройте новый PowerShell.
 
 Проверка:
 
@@ -272,6 +276,23 @@ ollama serve
 Set-Location "D:\projects\my-ai-agent"
 .\build\Release\jarvis.exe status
 ```
+
+### `could not find any instance of Visual Studio`
+
+Компилятор C++ не установлен. В PowerShell **от администратора**:
+
+```powershell
+winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
+
+Потом перезагрузите ПК и снова:
+
+```powershell
+Set-Location "D:\projects\my-ai-agent"
+powershell -ExecutionPolicy Bypass -File .\build.ps1
+```
+
+---
 
 ### `nmake` / `no such file or directory` при cmake
 
